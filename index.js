@@ -110,15 +110,13 @@ function renderCategory(c) {
 // Welcome screen: banner photo (if set) → else welcome video (if set) →
 // else plain text. Then the services list.
 async function sendWelcome(ctx) {
-  const welcomeBtns = Markup.inlineKeyboard([
-    [Markup.button.url('🛒 បញ្ជាទិញឥឡូវនេះ', orderUrl())],
-  ]);
+  // Message 1: welcome (banner photo / video / text) carrying the bottom menu
   try {
     if (mediaConfig.bannerPhotoId) {
       await ctx.replyWithPhoto(mediaConfig.bannerPhotoId, {
         caption: T.welcome,
         parse_mode: 'HTML',
-        ...welcomeBtns,
+        ...mainKeyboard,
       });
       if (mediaConfig.welcomeVideoId) {
         await ctx.replyWithVideo(mediaConfig.welcomeVideoId, { supports_streaming: true });
@@ -128,16 +126,16 @@ async function sendWelcome(ctx) {
         caption: T.welcome,
         parse_mode: 'HTML',
         supports_streaming: true,
-        ...welcomeBtns,
+        ...mainKeyboard,
       });
     } else {
-      await ctx.replyWithHTML(T.welcome, { disable_web_page_preview: true, ...welcomeBtns });
+      await ctx.replyWithHTML(T.welcome, { disable_web_page_preview: true, ...mainKeyboard });
     }
   } catch (e) {
     console.error('⚠️ send welcome media បរាជ័យ:', e.message);
-    await ctx.replyWithHTML(T.welcome, { disable_web_page_preview: true, ...welcomeBtns });
+    await ctx.replyWithHTML(T.welcome, { disable_web_page_preview: true, ...mainKeyboard });
   }
-  await ctx.reply('👇', mainKeyboard);
+  // Message 2: the services list
   await ctx.replyWithHTML(T.servicesIntro, servicesInlineKeyboard());
 }
 
@@ -359,12 +357,7 @@ bot.catch((err, ctx) => console.error(`⚠️ Bot error (${ctx?.updateType}):`, 
 async function setupBotMenu() {
   try {
     await bot.telegram.setMyCommands([
-      { command: 'start', description: '🏠 ចាប់ផ្តើម / មើលសេវាកម្ម' },
-      { command: 'services', description: '🎁 សេវាកម្មទាំងអស់' },
-      { command: 'order', description: '🛒 បញ្ជាទិញឥឡូវនេះ' },
-      { command: 'how', description: '📖 របៀបបញ្ជាទិញ' },
-      { command: 'menu', description: '⌨️ បង្ហាញមេនុយខាងក្រោម' },
-      { command: 'myid', description: '🆔 មើល Telegram ID' },
+      { command: 'start', description: '🏠 ចាប់ផ្តើម' },
     ]);
     await bot.telegram.setChatMenuButton({ menuButton: { type: 'commands' } });
     console.log('✅ Bot command menu registered');
