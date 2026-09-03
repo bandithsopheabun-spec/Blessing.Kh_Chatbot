@@ -1,0 +1,63 @@
+{
+  "_comment": "Editable marketing catalog for @blessing_kh_chatbot. Text only — no live pricing. Edit freely; the bot reloads this file on restart.",
+  "categories": [
+    {
+      "id": "tiktok_likes",
+      "emoji": "❤️",
+      "title": "TikTok Likes + Views",
+      "description": "បង្កើនចំនួន <b>Likes</b> និង <b>Views</b> លើវីដេអូ TikTok របស់អ្នកភ្លាមៗ ជួយឲ្យវីដេអូងាយឡើង <b>For You</b> និងទាក់ទាញអ្នកទស្សនាថ្មី។",
+      "bullets": [
+        "កញ្ចប់តូចធំ ចាប់ពី ~៥៥០ Likes + ~៧០០ Views រហូតដល់រាប់សែន",
+        "ចាប់ផ្តើមលឿន ជាធម្មតាក្នុងរយៈពេល ៥ នាទី – ១ ម៉ោង",
+        "Views មកជាមួយ Likes ក្នុងកញ្ចប់តែមួយ"
+      ],
+      "priceHint": "ចាប់ពី $1.99"
+    },
+    {
+      "id": "tiktok_views",
+      "emoji": "👀",
+      "title": "TikTok Views",
+      "description": "ត្រូវការតែ <b>Views</b> ច្រើនៗ? កញ្ចប់ Views សុទ្ធ ជួយឲ្យវីដេអូមើលទៅមានភាពពេញនិយម និងគួរឲ្យទុកចិត្ត។",
+      "bullets": [
+        "ចាប់ពី ~២.៤K រហូតដល់រាប់លាន View",
+        "មាន Likes ចៃដន្យ (random) បន្ថែមជូន",
+        "ល្អសម្រាប់ campaign ផ្សព្វផ្សាយ ឬ video promo"
+      ],
+      "priceHint": "ចាប់ពី $1.99"
+    },
+    {
+      "id": "tiktok_followers",
+      "emoji": "👥",
+      "title": "TikTok Khmer Followers",
+      "description": "បន្ថែម <b>Followers ខ្មែរ</b> ដល់ profile TikTok របស់អ្នក បង្កើនទំនុកចិត្ត និងភាពជឿជាក់ពីអតិថិជន។",
+      "bullets": [
+        "Followers ខ្មែរ ចាប់ពី ~១៨ រហូតដល់ជាង ១ម៉ឺននាក់",
+        "មាន Likes & Views បន្ថែមជូនក្នុងកញ្ចប់",
+        "សាកសមសម្រាប់ហាងអនឡាញ និងអ្នកបង្កើត content"
+      ],
+      "priceHint": "ចាប់ពី $1.99"
+    },
+    {
+      "id": "telegram",
+      "emoji": "📢",
+      "title": "Telegram Members & Views",
+      "description": "បង្កើនសមាជិក <b>Group / Channel</b> និង <b>Views</b> លើ post ជួយ channel របស់អ្នកមើលទៅសកម្ម និងមានកម្លាំង។",
+      "bullets": [
+        "Members និង post Views",
+        "សាកសួរកញ្ចប់ និងតម្លៃលម្អិតជាមួយ Admin ក្នុង Bot មេ"
+      ],
+      "priceHint": "សាកសួរ Admin"
+    },
+    {
+      "id": "facebook",
+      "emoji": "👍",
+      "title": "Facebook Likes & Followers",
+      "description": "បង្កើន <b>Likes</b>, <b>Followers</b> និង <b>Reactions</b> លើ Page ឬ Post Facebook របស់អ្នក។",
+      "bullets": [
+        "Page Likes / Followers / Post Reactions",
+        "សាកសួរកញ្ចប់ និងតម្លៃលម្អិតជាមួយ Admin ក្នុង Bot មេ"
+      ],
+      "priceHint": "សាកសួរ Admin"
+    }
+  ]
+}

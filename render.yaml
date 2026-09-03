@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: blessing-kh-chatbot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: MAIN_BOT_USERNAME
+        value: BlessingKhV1_Bot
+      - key: ORDER_START_PARAM
+        value: catalog
+      - key: SUPPORT_LINK
+        value: https://t.me/Blessing_Kh_Supports
+      - key: CHANNEL_LINK
+        value: https://t.me/Blessing_Kh_Public/3
