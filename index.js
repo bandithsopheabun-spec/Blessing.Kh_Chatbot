@@ -143,7 +143,7 @@ async function sendWelcome(ctx) {
 const T = {
   welcome:
     '🌟 <b>សូមស្វាគមន៍មកកាន់ Blessing.Kh</b> 🌟\n\n' +
-    'សេវាកម្មបង្កើន <b>Likes • Views • Followers</b> លើ <b>TikTok</b> (និង Telegram / Facebook) — ' +
+    'សេវាកម្មបង្កើន <b>Likes • Views • Followers</b> លើ <b>TikTok</b> — ' +
     'លឿន ទាន់ចិត្ត តម្លៃសមរម្យ។\n\n' +
     'សាកសមសម្រាប់ 🛍️ អ្នកលក់អនឡាញ • 🎬 អ្នកបង្កើត content • 📄 ម្ចាស់ page។\n\n' +
     '👇 ជ្រើសរើសមេនុយខាងក្រោមដើម្បីចាប់ផ្តើម។',
