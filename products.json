@@ -36,28 +36,6 @@
         "សាកសមសម្រាប់ហាងអនឡាញ និងអ្នកបង្កើត content"
       ],
       "priceHint": "ចាប់ពី $1.99"
-    },
-    {
-      "id": "telegram",
-      "emoji": "📢",
-      "title": "Telegram Members & Views",
-      "description": "បង្កើនសមាជិក <b>Group / Channel</b> និង <b>Views</b> លើ post ជួយ channel របស់អ្នកមើលទៅសកម្ម និងមានកម្លាំង។",
-      "bullets": [
-        "Members និង post Views",
-        "សាកសួរកញ្ចប់ និងតម្លៃលម្អិតជាមួយ Admin ក្នុង Bot មេ"
-      ],
-      "priceHint": "សាកសួរ Admin"
-    },
-    {
-      "id": "facebook",
-      "emoji": "👍",
-      "title": "Facebook Likes & Followers",
-      "description": "បង្កើន <b>Likes</b>, <b>Followers</b> និង <b>Reactions</b> លើ Page ឬ Post Facebook របស់អ្នក។",
-      "bullets": [
-        "Page Likes / Followers / Post Reactions",
-        "សាកសួរកញ្ចប់ និងតម្លៃលម្អិតជាមួយ Admin ក្នុង Bot មេ"
-      ],
-      "priceHint": "សាកសួរ Admin"
     }
   ]
 }
