@@ -180,12 +180,19 @@ bot.catch((err, ctx) => console.error(`⚠️ Bot error (${ctx?.updateType}):`, 
 
 // ---- 6. LAUNCH + HTTP HEALTH SERVER ------------------------
 function launchBot(attempt = 1) {
+  // NOTE: In Telegraf v4 bot.launch()'s promise resolves only when the bot
+  // STOPS, so success is logged from the onLaunch callback instead. The
+  // promise's .catch() still fires on a start-up error (e.g. a transient
+  // 409 Conflict) — retry indefinitely with a capped backoff so the bot
+  // self-heals rather than dying after N attempts.
   bot
-    .launch({ dropPendingUpdates: true })
-    .then(() => console.log(`🤖 @${bot.botInfo?.username || 'blessing_kh_chatbot'} កំពុងដំណើរការ → funnel ទៅ @${MAIN_BOT_USERNAME}`))
+    .launch({ dropPendingUpdates: true }, () =>
+      console.log(`🤖 @${bot.botInfo?.username || 'blessing_kh_chatbot'} កំពុង polling → funnel ទៅ @${MAIN_BOT_USERNAME}`)
+    )
     .catch((err) => {
-      console.error(`❌ Launch បរាជ័យ (ព្យាយាមលើកទី ${attempt}):`, err.message);
-      if (attempt < 5) setTimeout(() => launchBot(attempt + 1), 5000 * attempt);
+      const wait = Math.min(60000, 5000 * attempt);
+      console.error(`❌ Launch បរាជ័យ (លើកទី ${attempt}): ${err.message} — ព្យាយាមម្តងទៀតក្នុង ${wait / 1000}s`);
+      setTimeout(() => launchBot(attempt + 1), wait);
     });
 }
 launchBot();
