@@ -201,7 +201,9 @@ bot.hears(['🎁 សេវាកម្មទាំងអស់', '/services'], (
 
 bot.hears(['💎 ហេតុអ្វីជ្រើសរើសយើង'], (ctx) => ctx.replyWithHTML(T.why, orderButton));
 
-bot.hears(['📖 របៀបបញ្ជាទិញ'], (ctx) => ctx.replyWithHTML(T.how, orderButton));
+bot.hears(['📖 របៀបបញ្ជាទិញ', '/how'], (ctx) => ctx.replyWithHTML(T.how, orderButton));
+
+bot.command('menu', (ctx) => ctx.reply('👇 មេនុយ ៖', mainKeyboard));
 
 bot.hears(['🛒 បញ្ជាទិញឥឡូវនេះ', '/order'], (ctx) =>
   ctx.replyWithHTML(T.cta, {
@@ -353,6 +355,24 @@ bot.on('text', (ctx) => ctx.replyWithHTML(T.fallback, mainKeyboard));
 bot.catch((err, ctx) => console.error(`⚠️ Bot error (${ctx?.updateType}):`, err));
 
 // ---- 9. LAUNCH + HTTP HEALTH SERVER -----------------------
+// Register the blue "Menu" command button next to the input field
+async function setupBotMenu() {
+  try {
+    await bot.telegram.setMyCommands([
+      { command: 'start', description: '🏠 ចាប់ផ្តើម / មើលសេវាកម្ម' },
+      { command: 'services', description: '🎁 សេវាកម្មទាំងអស់' },
+      { command: 'order', description: '🛒 បញ្ជាទិញឥឡូវនេះ' },
+      { command: 'how', description: '📖 របៀបបញ្ជាទិញ' },
+      { command: 'menu', description: '⌨️ បង្ហាញមេនុយខាងក្រោម' },
+      { command: 'myid', description: '🆔 មើល Telegram ID' },
+    ]);
+    await bot.telegram.setChatMenuButton({ menuButton: { type: 'commands' } });
+    console.log('✅ Bot command menu registered');
+  } catch (e) {
+    console.error('⚠️ setupBotMenu បរាជ័យ:', e.message);
+  }
+}
+
 function launchBot(attempt = 1) {
   // NOTE: In Telegraf v4 bot.launch()'s promise resolves only when the bot
   // STOPS, so success is logged from the onLaunch callback instead. The
@@ -360,9 +380,10 @@ function launchBot(attempt = 1) {
   // 409 Conflict) — retry indefinitely with a capped backoff so the bot
   // self-heals rather than dying after N attempts.
   bot
-    .launch({ dropPendingUpdates: true }, () =>
-      console.log(`🤖 @${bot.botInfo?.username || 'blessing_kh_chatbot'} កំពុង polling → funnel ទៅ @${MAIN_BOT_USERNAME}`)
-    )
+    .launch({ dropPendingUpdates: true }, () => {
+      console.log(`🤖 @${bot.botInfo?.username || 'blessing_kh_chatbot'} កំពុង polling → funnel ទៅ @${MAIN_BOT_USERNAME}`);
+      setupBotMenu();
+    })
     .catch((err) => {
       const wait = Math.min(60000, 5000 * attempt);
       console.error(`❌ Launch បរាជ័យ (លើកទី ${attempt}): ${err.message} — ព្យាយាមម្តងទៀតក្នុង ${wait / 1000}s`);
