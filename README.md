@@ -23,6 +23,22 @@ npm start
 | `ORDER_START_PARAM` | ref ដែលភ្ជាប់ជា `?start=` ពេលបើក Bot មេ (default `catalog`) |
 | `SUPPORT_LINK` / `CHANNEL_LINK` | Link បង្ហាញក្នុង menu |
 | `PORT` | Port health-check (Render កំណត់ស្វ័យប្រវត្តិ) |
+| `ADMIN_IDS` | Telegram user ID (បំបែកដោយ `,`) ដែលអាចប្រើ `/admin` |
+| `BANNER_PHOTO_ID` / `WELCOME_VIDEO_ID` | File ID Banner/Video ថេរ (កុំឲ្យបាត់ពេល redeploy) |
+
+## Admin panel
+
+Admin (ក្នុង `ADMIN_IDS`) ផ្ញើ `/admin` ទៅ bot → panel មាន៖
+
+- 🖼️ **កំណត់ Banner** — ផ្ញើរូបភាព → បង្ហាញនៅ `/start`
+- 🎬 **កំណត់ Video** — ផ្ញើវីដេអូ → បង្ហាញនៅ `/start` (បន្ទាប់ពី Banner បើមានទាំងពីរ)
+- 🗑️ លុប Banner / Video
+- 👁️ Preview
+
+ផ្សេងទៀត៖ `/myid` បង្ហាញ Telegram ID របស់អ្នក។
+
+> ⚠️ Render លុប `media_config.json` ពេល redeploy។ Bot បោះ File ID ចេញឲ្យ —
+> ចម្លងវាដាក់ក្នុង env var `BANNER_PHOTO_ID` / `WELCOME_VIDEO_ID` ដើម្បីឲ្យថេរ។
 
 ## កែ content
 

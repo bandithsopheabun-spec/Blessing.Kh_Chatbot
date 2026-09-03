@@ -10,7 +10,8 @@ const path = require('path');
 //  Purpose: introduce the SMM service packages in Khmer, then
 //  funnel the customer into the MAIN ordering bot
 //  (@BlessingKhV1_Bot) via a t.me deep link.
-//  No database, no payments, no admin panel — display only.
+//  No database, no payments. A small admin panel lets an admin
+//  set a welcome banner image + welcome video from inside Telegram.
 // ============================================================
 
 // ---- 1. CONFIG --------------------------------------------------
@@ -25,6 +26,12 @@ const ORDER_START_PARAM = process.env.ORDER_START_PARAM || 'catalog';
 const SUPPORT_LINK = process.env.SUPPORT_LINK || 'https://t.me/Blessing_Kh_Supports';
 const CHANNEL_LINK = process.env.CHANNEL_LINK || 'https://t.me/Blessing_Kh_Public/3';
 const PORT = process.env.PORT || 3000;
+
+const ADMIN_IDS = (process.env.ADMIN_IDS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const isAdmin = (id) => ADMIN_IDS.includes(String(id));
 
 const bot = new Telegraf(BOT_TOKEN);
 
@@ -41,7 +48,35 @@ function loadCatalog() {
 }
 loadCatalog();
 
-// ---- 3. HELPERS ----------------------------------------------
+// ---- 3. MEDIA CONFIG (welcome banner + video) ------------------
+// Admins set these live from inside Telegram; the file IDs persist to
+// media_config.json. NOTE: Render's disk is ephemeral — the JSON file is
+// wiped on every redeploy. For a permanent banner/video, also copy the
+// printed File ID into the BANNER_PHOTO_ID / WELCOME_VIDEO_ID env vars.
+const MEDIA_FILE = path.join(__dirname, 'media_config.json');
+let mediaConfig = {
+  bannerPhotoId: process.env.BANNER_PHOTO_ID || null,
+  welcomeVideoId: process.env.WELCOME_VIDEO_ID || null,
+};
+function loadMediaConfig() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(MEDIA_FILE, 'utf8'));
+    if (saved.bannerPhotoId) mediaConfig.bannerPhotoId = saved.bannerPhotoId;
+    if (saved.welcomeVideoId) mediaConfig.welcomeVideoId = saved.welcomeVideoId;
+  } catch (e) {
+    /* no saved file yet — env-var defaults stand */
+  }
+}
+function saveMediaConfig() {
+  try {
+    fs.writeFileSync(MEDIA_FILE, JSON.stringify(mediaConfig, null, 2));
+  } catch (e) {
+    console.error('⚠️ save media_config.json បរាជ័យ:', e.message);
+  }
+}
+loadMediaConfig();
+
+// ---- 4. HELPERS ----------------------------------------------
 function orderUrl(ref) {
   const param = ref ? `${ORDER_START_PARAM}_${ref}` : ORDER_START_PARAM;
   return `https://t.me/${MAIN_BOT_USERNAME}?start=${encodeURIComponent(param)}`;
@@ -72,7 +107,41 @@ function renderCategory(c) {
   return s;
 }
 
-// ---- 4. TEXTS (Khmer) ---------------------------------------
+// Welcome screen: banner photo (if set) → else welcome video (if set) →
+// else plain text. Then the services list.
+async function sendWelcome(ctx) {
+  const welcomeBtns = Markup.inlineKeyboard([
+    [Markup.button.url('🛒 បញ្ជាទិញឥឡូវនេះ', orderUrl())],
+  ]);
+  try {
+    if (mediaConfig.bannerPhotoId) {
+      await ctx.replyWithPhoto(mediaConfig.bannerPhotoId, {
+        caption: T.welcome,
+        parse_mode: 'HTML',
+        ...welcomeBtns,
+      });
+      if (mediaConfig.welcomeVideoId) {
+        await ctx.replyWithVideo(mediaConfig.welcomeVideoId, { supports_streaming: true });
+      }
+    } else if (mediaConfig.welcomeVideoId) {
+      await ctx.replyWithVideo(mediaConfig.welcomeVideoId, {
+        caption: T.welcome,
+        parse_mode: 'HTML',
+        supports_streaming: true,
+        ...welcomeBtns,
+      });
+    } else {
+      await ctx.replyWithHTML(T.welcome, { disable_web_page_preview: true, ...welcomeBtns });
+    }
+  } catch (e) {
+    console.error('⚠️ send welcome media បរាជ័យ:', e.message);
+    await ctx.replyWithHTML(T.welcome, { disable_web_page_preview: true, ...welcomeBtns });
+  }
+  await ctx.reply('👇', mainKeyboard);
+  await ctx.replyWithHTML(T.servicesIntro, servicesInlineKeyboard());
+}
+
+// ---- 5. TEXTS (Khmer) ---------------------------------------
 const T = {
   welcome:
     '🌟 <b>សូមស្វាគមន៍មកកាន់ Blessing.Kh</b> 🌟\n\n' +
@@ -117,13 +186,14 @@ const T = {
 
 const orderButton = Markup.inlineKeyboard([[Markup.button.url('🛒 បញ្ជាទិញឥឡូវនេះ', orderUrl())]]);
 
-// ---- 5. HANDLERS --------------------------------------------
-bot.start(async (ctx) => {
-  await ctx.replyWithHTML(T.welcome, mainKeyboard);
-  await ctx.replyWithHTML(T.servicesIntro, servicesInlineKeyboard());
-});
+// ---- 6. PUBLIC HANDLERS ------------------------------------
+bot.start((ctx) => sendWelcome(ctx));
 
 bot.help((ctx) => ctx.replyWithHTML(T.how, orderButton));
+
+bot.command('myid', (ctx) =>
+  ctx.reply(`🆔 Telegram ID របស់អ្នក ៖ ${ctx.from.id}\n(ដាក់លេខនេះក្នុង ADMIN_IDS ដើម្បីក្លាយជា Admin)`)
+);
 
 bot.hears(['🎁 សេវាកម្មទាំងអស់', '/services'], (ctx) =>
   ctx.replyWithHTML(T.servicesIntro, servicesInlineKeyboard())
@@ -173,12 +243,116 @@ bot.action('cats', async (ctx) => {
   }
 });
 
-// Anything else → nudge back to the menu / main bot
-bot.on('message', (ctx) => ctx.replyWithHTML(T.fallback, mainKeyboard));
+// ---- 7. ADMIN PANEL (banner + video) ----------------------
+const adminState = {}; // { [userId]: 'AWAITING_BANNER' | 'AWAITING_VIDEO' }
+
+function adminPanelText() {
+  return (
+    '🔐 <b>Admin — Welcome Media</b>\n\n' +
+    `🖼️ Banner ៖ ${mediaConfig.bannerPhotoId ? '✅ បានកំណត់' : '— មិនទាន់មាន'}\n` +
+    `🎬 Video ៖ ${mediaConfig.welcomeVideoId ? '✅ បានកំណត់' : '— មិនទាន់មាន'}\n\n` +
+    '<i>Banner បង្ហាញនៅពេលអតិថិជនចុច /start ។ បើមានទាំង Banner និង Video ' +
+    'នោះ Banner បង្ហាញមុន បន្ទាប់មក Video ។</i>'
+  );
+}
+
+function adminPanelKeyboard() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('🖼️ កំណត់ Banner', 'adm:banner'), Markup.button.callback('🎬 កំណត់ Video', 'adm:video')],
+    [
+      Markup.button.callback('🗑️ លុប Banner', 'adm:del_banner'),
+      Markup.button.callback('🗑️ លុប Video', 'adm:del_video'),
+    ],
+    [Markup.button.callback('👁️ មើលសាកល្បង (Preview)', 'adm:preview')],
+    [Markup.button.callback('✖️ បិទ', 'adm:close')],
+  ]);
+}
+
+bot.command('admin', (ctx) => {
+  if (!isAdmin(ctx.from.id)) {
+    return ctx.reply('⛔ អ្នកមិនមែនជា Admin ទេ។ ប្រើ /myid ដើម្បីមើល ID របស់អ្នក។');
+  }
+  delete adminState[ctx.from.id];
+  return ctx.replyWithHTML(adminPanelText(), adminPanelKeyboard());
+});
+
+bot.action(/^adm:(.+)$/, async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('⛔ Admin only', { show_alert: true });
+  const action = ctx.match[1];
+  await ctx.answerCbQuery();
+
+  if (action === 'banner') {
+    adminState[ctx.from.id] = 'AWAITING_BANNER';
+    return ctx.replyWithHTML('🖼️ សូម <b>ផ្ញើរូបភាព</b> (photo) ដែលចង់ប្រើជា Banner ។\n\nផ្ញើ /cancel ដើម្បីបោះបង់។');
+  }
+  if (action === 'video') {
+    adminState[ctx.from.id] = 'AWAITING_VIDEO';
+    return ctx.replyWithHTML('🎬 សូម <b>ផ្ញើវីដេអូ</b> (video) ដែលចង់ប្រើ ។\n\nផ្ញើ /cancel ដើម្បីបោះបង់។');
+  }
+  if (action === 'del_banner') {
+    mediaConfig.bannerPhotoId = null;
+    saveMediaConfig();
+    return ctx.editMessageText(adminPanelText(), { parse_mode: 'HTML', ...adminPanelKeyboard() });
+  }
+  if (action === 'del_video') {
+    mediaConfig.welcomeVideoId = null;
+    saveMediaConfig();
+    return ctx.editMessageText(adminPanelText(), { parse_mode: 'HTML', ...adminPanelKeyboard() });
+  }
+  if (action === 'preview') {
+    return sendWelcome(ctx);
+  }
+  if (action === 'close') {
+    delete adminState[ctx.from.id];
+    return ctx.editMessageText('✅ បិទ Admin panel ។');
+  }
+});
+
+bot.command('cancel', (ctx) => {
+  if (adminState[ctx.from.id]) {
+    delete adminState[ctx.from.id];
+    return ctx.reply('❌ បានបោះបង់។');
+  }
+});
+
+// Admin uploads the banner photo / welcome video
+bot.on('photo', async (ctx) => {
+  if (!isAdmin(ctx.from.id) || adminState[ctx.from.id] !== 'AWAITING_BANNER') return;
+  const photos = ctx.message.photo;
+  const fileId = photos[photos.length - 1].file_id; // highest resolution
+  mediaConfig.bannerPhotoId = fileId;
+  saveMediaConfig();
+  delete adminState[ctx.from.id];
+  await ctx.replyWithHTML(
+    '✅ <b>Banner ត្រូវបានកំណត់!</b>\n\n' +
+      `<code>${fileId}</code>\n\n` +
+      '💡 <i>ដើម្បីកុំឲ្យបាត់ពេល redeploy — ចម្លង File ID ខាងលើ ដាក់ក្នុង Render env var ' +
+      '<code>BANNER_PHOTO_ID</code> ។</i>'
+  );
+  return ctx.replyWithHTML(adminPanelText(), adminPanelKeyboard());
+});
+
+bot.on('video', async (ctx) => {
+  if (!isAdmin(ctx.from.id) || adminState[ctx.from.id] !== 'AWAITING_VIDEO') return;
+  const fileId = ctx.message.video.file_id;
+  mediaConfig.welcomeVideoId = fileId;
+  saveMediaConfig();
+  delete adminState[ctx.from.id];
+  await ctx.replyWithHTML(
+    '✅ <b>Video ត្រូវបានកំណត់!</b>\n\n' +
+      `<code>${fileId}</code>\n\n` +
+      '💡 <i>ដើម្បីកុំឲ្យបាត់ពេល redeploy — ចម្លង File ID ខាងលើ ដាក់ក្នុង Render env var ' +
+      '<code>WELCOME_VIDEO_ID</code> ។</i>'
+  );
+  return ctx.replyWithHTML(adminPanelText(), adminPanelKeyboard());
+});
+
+// ---- 8. FALLBACK ------------------------------------------
+bot.on('text', (ctx) => ctx.replyWithHTML(T.fallback, mainKeyboard));
 
 bot.catch((err, ctx) => console.error(`⚠️ Bot error (${ctx?.updateType}):`, err));
 
-// ---- 6. LAUNCH + HTTP HEALTH SERVER ------------------------
+// ---- 9. LAUNCH + HTTP HEALTH SERVER -----------------------
 function launchBot(attempt = 1) {
   // NOTE: In Telegraf v4 bot.launch()'s promise resolves only when the bot
   // STOPS, so success is logged from the onLaunch callback instead. The
